@@ -7,3 +7,4 @@ debug-*
 node_modules/*
 /doc/statistic/target/
 .svn
+.DS_Store

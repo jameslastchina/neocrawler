@@ -3,6 +3,7 @@
  */
 ////log setting////////////////////////////////////////////////////////////////////
 var logging = require('./lib/logging.js'); 
+process.on('uncaughtException', function(err) { console.log(err.stack); });//sss added,避免爬虫在出错之后，直接crash。比如spider.js中的243行，因为字符编码不对可能出错，但是加try可能导致内存问题。如此可解决。
 ////arguments parse///////////////////////////////////////////////////////////////
 var userArgv = require('optimist')
 .usage('Usage: $0 -i [instance name] -a [crawl|test|config|proxy|schedule]  -p [num] -l[url] -h')

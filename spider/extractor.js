@@ -192,7 +192,27 @@ extractor.prototype.extract = function(crawl_info){
             var drill_link = this.extract_link($,crawl_info['origin']['drill_rules']);
         }
 
-        var washed_link = this.wash_link(crawl_info['url'],drill_link);
+	//sss modied 20160725 解决base标签的问题。
+	//sss added begin
+        var baseNode = $('base');
+        var baseUrl;
+        if (baseNode.length > 0){
+            //console.log('baseNode is :',baseNode.length);
+            baseUrl = baseNode.attr('href');
+            if (baseUrl.toLowerCase().indexOf('http')!=0){
+                var crawlUrl = url.parse(crawl_info['url']);
+                baseUrl = crwalUrl.protocol+"//"+crawlUrl.host;
+            }
+        }
+        console.log("baseUrl is :",baseUrl);
+        var washed_link;
+        if (baseUrl){
+            washed_link = this.wash_link(baseUrl,drill_link);
+        }else{
+            washed_link = this.wash_link(crawl_info['url'],drill_link);
+        }
+	//sss added end
+        //sss remed var washed_link = this.wash_link(crawl_info['url'],drill_link);
         crawl_info['drill_link'] = this.arrange_link(washed_link);
         if(this.spiderCore.settings['keep_link_relation'])crawl_info['drill_relation'] = this.getDrillRelation($,crawl_info);
     }
@@ -320,6 +340,11 @@ extractor.prototype.cssSelector = function($,expression,pick,index){
     //if(real_index<0)real_index=0;
     var tmp_val = $.find(expression);
     if(!pick)return tmp_val;
+    //sss added begin
+    if (exclude){
+        $.find(expression+' '+exclude).remove();
+    }
+    //sss added end
     if(typeof(tmp_val)==='object'){
         if(real_index>=0){
             var val = tmp_val.eq(real_index);

@@ -8,7 +8,10 @@ var redis = require("redis");
 var events = require('events');
 var child_process = require('child_process');
 var path = require('path');
-var http = require('http');
+//var http = require('http');
+//var https = require('https');
+var http =  require('follow-redirects').http;
+var https =  require('follow-redirects').https;
 require('../lib/jsextend.js');
 var iconv = require('iconv-lite');
 var BufferHelper = require('bufferhelper');
@@ -170,7 +173,12 @@ downloader.prototype.downloadItAct = function(urlinfo){
         }
     };
     logger.debug(util.format('Request start, %s',pageLink));
-    var req = http.request(options, function(res) {
+    var httpLib = http;
+    if (urlobj.protocol && urlobj.protocol === 'https:') {
+        httpLib = https;
+    }
+    //sss modied var req = http.request(options, function(res) {
+    var req = httpLib.request(options, function(res) {
         logger.debug(util.format('Response, %s',pageLink));
 
         var result = {
