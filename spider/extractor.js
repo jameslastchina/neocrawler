@@ -65,6 +65,12 @@ extractor.prototype.wash_link = function(pageurl,links){
     for(var i=0;i<links.length;i++){
         if(!links[i])continue;
         var link = links[i].trim();
+        //sss added begin 解决一些特殊情况，比如链接里面的url主机和hostname不一致的情况。
+        if (links.indexOf(pageurl)!=0){
+           link = url.parse(link).path;
+           console.log('link is :',link);
+        }
+        //sss added end
         if(!(link.startsWith('#')||link.startsWith('javascript')||link.startsWith('void('))){
             try{
                 var the_url = url.resolve(pageurl,link);
@@ -201,7 +207,7 @@ extractor.prototype.extract = function(crawl_info){
             baseUrl = baseNode.attr('href');
             if (baseUrl.toLowerCase().indexOf('http')!=0){
                 var crawlUrl = url.parse(crawl_info['url']);
-                baseUrl = crwalUrl.protocol+"//"+crawlUrl.host;
+                baseUrl = crawlUrl.protocol+"//"+crawlUrl.host;
             }
         }
         console.log("baseUrl is :",baseUrl);
