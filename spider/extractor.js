@@ -66,9 +66,13 @@ extractor.prototype.wash_link = function(pageurl,links){
         if(!links[i])continue;
         var link = links[i].trim();
         //sss added begin 解决一些特殊情况，比如链接里面的url主机和hostname不一致的情况。
+        var sss  = url.parse(link);
+        //console.log('sss :',sss);
         if (links.indexOf(pageurl)!=0){
-           link = url.parse(link).path;
-           console.log('link is :',link);
+                if (url.parse(link).path){
+                    link = url.parse(link).path;
+                    //console.log('link is :',link);
+                }
         }
         //sss added end
         if(!(link.startsWith('#')||link.startsWith('javascript')||link.startsWith('void('))){
