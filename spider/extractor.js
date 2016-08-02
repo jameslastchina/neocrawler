@@ -273,7 +273,7 @@ extractor.prototype.extract_data = function(url,content,extract_rule,uppper_data
                         pick = false;
                         (function(k){
                             var result_arr = [];
-                            var tmp_result = self.cssSelector(baser,rule['expression'],pick,rule['index']);
+                            var tmp_result = self.cssSelector(baser,rule['expression'],pick,rule['index'],rule['exclude']);
                             if(tmp_result){
                                 tmp_result.each(function(x, elem) {
                                     var sub_dom = tmp_result.eq(x);
@@ -284,7 +284,7 @@ extractor.prototype.extract_data = function(url,content,extract_rule,uppper_data
                         })(i);
                     }else{
                         try{
-                            var tmp_result = this.cssSelector(baser,rule['expression'],pick,rule['index']);
+                            var tmp_result = this.cssSelector(baser,rule['expression'],pick,rule['index'],rule['exclude']);
                             if(tmp_result&&!isEmpty(tmp_result))data[i] = tmp_result;
                         } catch(e){
                             logger.error(url + ' extract field '+ i + ' error:'+e);
@@ -343,7 +343,7 @@ extractor.prototype.checksublack = function(keys,data){
  * @param index
  * @returns {*}
  */
-extractor.prototype.cssSelector = function($,expression,pick,index){
+extractor.prototype.cssSelector = function($,expression,pick,index,exclude){
 //    logger.debug('css expression: '+expression);
     if(!index)index=1;
     var real_index = parseInt(index) - 1;
