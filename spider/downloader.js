@@ -155,6 +155,10 @@ downloader.prototype.downloadItAct = function(urlinfo){
     }
 
 
+    if (!urlinfo['referer'] || urlinfo['referer'].trim().length == 0){
+	var port = __port?__port:'';
+        urlinfo['referer'] = urlobj.protocol+"//"+__host+"/"+port;
+    }
     var startTime = new Date();
     var options = {
         'host': __host,
@@ -167,6 +171,7 @@ downloader.prototype.downloadItAct = function(urlinfo){
             "Accept-Encoding":"gzip",
             "Accept-Language":"zh-CN,zh;q=0.8,en-US;q=0.6,en;q=0.4",
             "Referer":urlinfo['referer']||'',
+            "Referer":urlinfo['referer']||__host, //sss moided0807
             "host": urlobj['host'],
             "void-proxy":urlinfo['void_proxy']?urlinfo['void_proxy']:"",
             "Cookie":this.transCookieKvPair(urlinfo['cookie'])
@@ -255,7 +260,7 @@ downloader.prototype.downloadItAct = function(urlinfo){
             req.abort();
             req=null;
             spiderCore.emit('crawling_failure',urlinfo,'download timeout');
-            if(self.timeout_count++>spiderCore.settings['spider_concurrency']){logger.fatal('too much timeout, exit.');process.exit(1);}
+            //sss modied if(self.timeout_count++>spiderCore.settings['spider_concurrency']){logger.fatal('too much timeout, exit.');process.exit(1);}
         }
     },spiderCore.settings['download_timeout']*1000);
 
