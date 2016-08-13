@@ -6,7 +6,7 @@
  * extract link
  * @param crawl_info
  */
-var cheerio = require('cheerio')
+var cheerio = require('cheerio');
 var util = require('util');
 var url =  require("url");
 var querystring = require('querystring');
@@ -175,7 +175,8 @@ extractor.prototype.getDrillRelation = function($,crawl_info){
                 break;
             case 'css':
             default:
-                new_relation = this.cssSelector($.root(),rule['expression'],rule['pick'],rule['index']);
+                //new_relation = this.cssSelector($.root(),rule['expression'],rule['pick'],rule['index']);
+                new_relation = this.cssSelector($,rule);
                 break;
         }
     }
@@ -273,7 +274,8 @@ extractor.prototype.extract_data = function(url,content,extract_rule,uppper_data
                         pick = false;
                         (function(k){
                             var result_arr = [];
-                            var tmp_result = self.cssSelector(baser,rule['expression'],pick,rule['index'],rule['exclude']);
+                            //var tmp_result = self.cssSelector(baser,rule['expression'],pick,rule['index'],rule['exclude']);
+                            var tmp_result = self.cssSelector(baser,rule);
                             if(tmp_result){
                                 tmp_result.each(function(x, elem) {
                                     var sub_dom = tmp_result.eq(x);
@@ -284,7 +286,8 @@ extractor.prototype.extract_data = function(url,content,extract_rule,uppper_data
                         })(i);
                     }else{
                         try{
-                            var tmp_result = this.cssSelector(baser,rule['expression'],pick,rule['index'],rule['exclude']);
+                            //var tmp_result = this.cssSelector(baser,rule['expression'],pick,rule['index'],rule['exclude']);
+                            var tmp_result = this.cssSelector(baser,rule);
                             if(tmp_result&&!isEmpty(tmp_result))data[i] = tmp_result;
                         } catch(e){
                             logger.error(url + ' extract field '+ i + ' error:'+e);
@@ -343,11 +346,35 @@ extractor.prototype.checksublack = function(keys,data){
  * @param index
  * @returns {*}
  */
-extractor.prototype.cssSelector = function($,expression,pick,index,exclude){
+extractor.prototype.cssSelector = function($,rule){
+    var expression = rule["expression"];
+    var pick= rule["pick"];
+    var index= rule["index"];
+    var exclude= rule["exclude"];
+    var replace= rule["replace"];
+    var to= rule["to"];
 //    logger.debug('css expression: '+expression);
     if(!index)index=1;
     var real_index = parseInt(index) - 1;
     //if(real_index<0)real_index=0;
+//sss added begin  
+    var $super = cheerio.load($.toString());
+    if (exclude){
+        $super(expression+' '+exclude).remove();
+    }
+    if (replace){
+        $super(expression +' '+replace).each(function(idx,item){
+            var eachDom = $super(item);
+            //console.log('eachDom:',$super.html(eachDom));
+            if (to){
+                eachDom.replaceWith('<'+to+'>'+eachDom.html()+'</'+to+'>');
+            }else{
+                eachDom.replaceWith(eachDom.html());
+            }
+        });
+    }
+    $ = $super.root();
+//sss added end    
     var tmp_val = $.find(expression);
     if(!pick)return tmp_val;
     //sss added begin
