@@ -206,7 +206,7 @@ extractor.prototype.extract = function(crawl_info){
 	//sss added begin
         var baseNode = $('base');
         var baseUrl;
-        if (baseNode.length > 0){
+        if (baseNode.length > 0 && baseNode.attr('href')){
             //console.log('baseNode is :',baseNode.length);
             baseUrl = baseNode.attr('href');
             if (baseUrl.toLowerCase().indexOf('http')!=0){
