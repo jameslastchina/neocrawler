@@ -268,7 +268,8 @@ extractor.prototype.extract_data = function(url,content,extract_rule,uppper_data
                     break;
                 default://css selector
                     if(dom)baser = dom;
-                    else baser = (cheerio.load(content)).root();
+                    //else baser = (cheerio.load(content)).root();
+                    else baser = (cheerio.load(content),{decodeEntities: false}).root();
                     var pick = rule['pick'];
                     if(rule['subset']){
                         pick = false;
@@ -358,7 +359,7 @@ extractor.prototype.cssSelector = function($,rule){
     var real_index = parseInt(index) - 1;
     //if(real_index<0)real_index=0;
 //sss added begin  
-    var $super = cheerio.load($.toString());
+    var $super = cheerio.load($.toString(),{decodeEntities: false});
     if (exclude){
         $super(expression+' '+exclude).remove();
     }
