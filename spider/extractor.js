@@ -6,7 +6,7 @@
  * extract link
  * @param crawl_info
  */
-var cheerio = require('cheerio');
+var cheerio = require('cheerio')
 var util = require('util');
 var url =  require("url");
 var querystring = require('querystring');
@@ -30,6 +30,7 @@ extractor.prototype.assembly = function(callback){
  * @returns {Array}
  */
 extractor.prototype.extract_link = function($,rules){
+    console.log('sss debug:in extractor.js, extract_link called.');
     var links = [];
     for(var i=0;i<rules.length;i++){
         $(rules[i]).each(function(i, elem) {
@@ -60,21 +61,22 @@ extractor.prototype.__getTopLevelDomain = function(domain){
  * @returns {Array}
  */
 extractor.prototype.wash_link = function(pageurl,links){
+console.log('sss debug:pageurl is:',JSON.stringify(pageurl));
+//console.log('sss debug:links is:',JSON.stringify(links));
     //url resolve
     var cleaned_link = [];
     for(var i=0;i<links.length;i++){
         if(!links[i])continue;
         var link = links[i].trim();
         //sss added begin 解决一些特殊情况，比如链接里面的url主机和hostname不一致的情况。
-        var sss  = url.parse(link);
-        //console.log('sss :',sss);
-        if (links.indexOf(pageurl)!=0){
-                if (url.parse(link).path){
-                    link = url.parse(link).path;
-                    //console.log('link is :',link);
-                }
-        }
-        //sss added end
+	var sss  = url.parse(link);
+	//console.log('sss :',sss);
+	if (links.indexOf(pageurl)!=0){
+		if (url.parse(link).path){
+		    link = url.parse(link).path;
+		}
+	}
+	//sss added end
         if(!(link.startsWith('#')||link.startsWith('javascript')||link.startsWith('void('))){
             try{
                 var the_url = url.resolve(pageurl,link);
@@ -85,6 +87,7 @@ extractor.prototype.wash_link = function(pageurl,links){
 
         }
     }
+    //console.log('sss debug:cleaned_link is:',JSON.stringify(cleaned_link));
     return arrayUnique(cleaned_link);
 }
 /**
@@ -119,6 +122,7 @@ extractor.prototype.detectLink = function(link){
  * @returns {{}}
  */
 extractor.prototype.arrange_link = function(links){
+//console.log('sss debug:links is:',JSON.stringify(links));
     var linkobj = {};
     for(var i=0;i<links.length;i++){
         var link = links[i];
@@ -193,8 +197,9 @@ extractor.prototype.extract = function(crawl_info){
     var extract_rule = this.spiderCore.spider.getDrillerRule(crawl_info['origin']['urllib'],'extract_rule');
 
     if(crawl_info['origin']['drill_rules']||extract_rule['rule']){
-        var $ = cheerio.load(crawl_info['content']);
+        var $ = cheerio.load(crawl_info['content']);//注意，这里不能使用{decodeEntities: false},否则url解析会有问题。比如&符号，会变成utf编码
     }
+// the result is the whole content of article. console.log('sss debug:crawl_info[content] is:',crawl_info['content']);
 
     if(crawl_info['origin']['drill_rules']){
         if(crawl_info['drill_link']){
@@ -203,32 +208,40 @@ extractor.prototype.extract = function(crawl_info){
             var drill_link = this.extract_link($,crawl_info['origin']['drill_rules']);
         }
 
-	//sss modied 20160725 解决base标签的问题。
-	//sss added begin
-        var baseNode = $('base');
-        var baseUrl;
-        if (baseNode.length > 0 && baseNode.attr('href')){
-            //console.log('baseNode is :',baseNode.length);
-            baseUrl = baseNode.attr('href');
-            if (baseUrl.toLowerCase().indexOf('http')!=0){
-                var crawlUrl = url.parse(crawl_info['url']);
-                baseUrl = crawlUrl.protocol+"//"+crawlUrl.host;
-            }
-        }
-        console.log("baseUrl is :",baseUrl);
-        var washed_link;
-        if (baseUrl){
-            washed_link = this.wash_link(baseUrl,drill_link);
+//sss modied 20160725 解决base标签的问题。 
+//sss added begin
+	var baseNode = $('base');
+	var baseUrl;
+	if (baseNode.length > 0 && baseNode.attr('href')){
+	    //console.log('baseNode is :',baseNode.length);
+	    console.log('url is:',crawl_info['url']);
+            var crawlUrl = url.parse(crawl_info['url']);
+           // console.log('crawlUrl:',crawlUrl);
+	    baseUrl = baseNode.attr('href');
+            //console.log('sss:baseUrl is',baseUrl);
+            console.log("baseUrl.toLowerCase().indexOf('http')",baseUrl.toLowerCase().indexOf('http'));
+	    if (baseUrl.toLowerCase().indexOf('http')!=0){
+	    	baseUrl = crawlUrl.protocol+"//"+crawlUrl.hostname;
+	    }else{
+	    	//baseUrl = crawlUrl.hostname;
+	    }
+	}
+	console.log("baseUrl is :",baseUrl);
+	//console.log("drill_link is :",drill_link);
+	var washed_link;
+	if (baseUrl){
+	    washed_link = this.wash_link(baseUrl,drill_link);
         }else{
-            washed_link = this.wash_link(crawl_info['url'],drill_link);
-        }
-	//sss added end
-        //sss remed var washed_link = this.wash_link(crawl_info['url'],drill_link);
+	    washed_link = this.wash_link(crawl_info['url'],drill_link);
+	}
+//sss added end
+        //sss modied var washed_link = this.wash_link(crawl_info['url'],drill_link);
         crawl_info['drill_link'] = this.arrange_link(washed_link);
         if(this.spiderCore.settings['keep_link_relation'])crawl_info['drill_relation'] = this.getDrillRelation($,crawl_info);
     }
 
     if(extract_rule['rule']&&!isEmpty(extract_rule['rule'])){
+        var $ = cheerio.load(crawl_info['content'],{decodeEntities: false});//sss added 0906
         var extracted_data = this.extract_data(crawl_info['url'],crawl_info['content'],extract_rule,null,$.root());
         crawl_info['extracted_data'] = extracted_data;
     }
@@ -267,14 +280,18 @@ extractor.prototype.extract_data = function(url,content,extract_rule,uppper_data
                 case 'json':
                     break;
                 default://css selector
-                    if(dom)baser = dom;
+                    if(dom){
+			//console.log('is dom');
+			baser = dom;
+		    }
                     //else baser = (cheerio.load(content)).root();
-                    else baser = (cheerio.load(content),{decodeEntities: false}).root();
+                    else baser = (cheerio.load(content),{decodeEntities: false}).root();//sss added 0905
                     var pick = rule['pick'];
                     if(rule['subset']){
                         pick = false;
                         (function(k){
                             var result_arr = [];
+                            //sss modied var tmp_result = self.cssSelector(baser,rule['expression'],pick,rule['index']);
                             //var tmp_result = self.cssSelector(baser,rule['expression'],pick,rule['index'],rule['exclude']);
                             var tmp_result = self.cssSelector(baser,rule);
                             if(tmp_result){
@@ -287,6 +304,7 @@ extractor.prototype.extract_data = function(url,content,extract_rule,uppper_data
                         })(i);
                     }else{
                         try{
+                            //sss modied var tmp_result = this.cssSelector(baser,rule['expression'],pick,rule['index']);
                             //var tmp_result = this.cssSelector(baser,rule['expression'],pick,rule['index'],rule['exclude']);
                             var tmp_result = this.cssSelector(baser,rule);
                             if(tmp_result&&!isEmpty(tmp_result))data[i] = tmp_result;
@@ -347,6 +365,8 @@ extractor.prototype.checksublack = function(keys,data){
  * @param index
  * @returns {*}
  */
+//sss modied extractor.prototype.cssSelector = function($,expression,pick,index){
+//extractor.prototype.cssSelector = function($,expression,pick,index,exclude){
 extractor.prototype.cssSelector = function($,rule){
     var expression = rule["expression"];
     var pick= rule["pick"];
@@ -354,35 +374,111 @@ extractor.prototype.cssSelector = function($,rule){
     var exclude= rule["exclude"];
     var replace= rule["replace"];
     var to= rule["to"];
+    
+    var reject= rule["reject"];//sss added 0923
+    var rejectAll= rule["rejectAll"];//sss added 0923
+    var rejectRegex= rule["rejectRegex"];//sss added 0928
+
+    var minLength = rule["min_length"];
 //    logger.debug('css expression: '+expression);
     if(!index)index=1;
     var real_index = parseInt(index) - 1;
     //if(real_index<0)real_index=0;
+    //var tmp_val = $.find(expression);
 //sss added begin  
-    var $super = cheerio.load($.toString(),{decodeEntities: false});
+    //var $super = cheerio.load($.toString());
+    var $super = cheerio.load($.toString(),{decodeEntities: false});//sss added 0905
+    var needToReject = false;
+    if (reject){
+        var rejectContent = $super(expression +' '+reject);
+        needToReject  = (rejectContent.length > 0);
+    }
+    console.log("needToReject:",needToReject);
+    if (needToReject){
+	logger.warn('sss debug:the article will be reject cause of needToReject.');
+        //expression = 'never select any content.by james.';
+        return null;
+    }
+
+    
+    var needToRejectAll = false;
+    if (rejectAll){
+        var rejectContent = $super(rejectAll);
+        needToRejectAll  = (rejectContent.length > 0);
+    }
+    console.log("needToRejectAll:%s,rejectAll:%s",needToRejectAll,rejectAll);
+    if (needToRejectAll){
+	logger.warn('sss debug:the article will be reject cause of needToRejectAll.');
+        //expression = 'never select any content.by james.';
+        return null;
+    }
+    
+    
+    var needToRejectRegex = false;
+    if (rejectRegex){
+	var regex = new RegExp(rejectRegex,'i');
+ 
+        var rejectContent = $super(expression);
+	console.log('sss debug:rejectRegex Content is:',rejectContent.text());
+        needToRejectRegex = regex.test(rejectContent.text());
+    }
+    console.log("needToRejectRegex:%s,rejectRegex:%s",needToRejectRegex,rejectRegex);
+    if (needToRejectRegex){
+        //expression = 'never select any content.by james.';
+        logger.warn('sss debug:the article will be reject cause of needToRejectRegex.');
+        return null;
+    }
+
+
+
     if (exclude){
-        $super(expression+' '+exclude).remove();
+	$super(expression+' '+exclude).remove();
     }
     if (replace){
-        $super(expression +' '+replace).each(function(idx,item){
-            var eachDom = $super(item);
-            //console.log('eachDom:',$super.html(eachDom));
-            if (to){
-                eachDom.replaceWith('<'+to+'>'+eachDom.html()+'</'+to+'>');
-            }else{
-                eachDom.replaceWith(eachDom.html());
-            }
-        });
+        console.log('replaced count:',$super(expression +' '+replace).length);
+	$super(expression +' '+replace).each(function(idx,item){
+ 		var eachDom = $super(item);
+		//console.log('eachDom:',$super.html(eachDom));
+		if (to){
+			eachDom.replaceWith('<'+to+'>'+eachDom.html()+'</'+to+'>');
+		}else{
+			eachDom.replaceWith(eachDom.html());
+		}
+	});
     }
+
+
+//added by yuchanglong
+var replaceNode=rule["replaceNode"];
+var toNode=rule["toNode"];
+if(replaceNode){
+   $super(expression +' '+replaceNode).each(function(idx,item){
+   	var replaceDom = $super(item);	             			
+        if (toNode){
+            var toContent=$super(toNode);	
+            replaceDom.replaceWith(toContent);			                			
+         }
+     });
+}
+//
+//console.log('replaced result:',$super(expression).toString());
     $ = $super.root();
-//sss added end    
+//sss added end
     var tmp_val = $.find(expression);
-    if(!pick)return tmp_val;
-    //sss added begin
-    if (exclude){
-        $.find(expression+' '+exclude).remove();
+    if (tmp_val && tmp_val.length > 0){
+	if (minLength){
+	   console.log('minlength:',minLength);
+	   if (tmp_val.toString().length<parseInt(minLength)){
+		console.warn('sss debug:content lt minLength. to return null.',tmp_val.toString());
+		return null;
+	   }
+	}
     }
-    //sss added end
+	
+
+
+
+    if(!pick)return tmp_val;
     if(typeof(tmp_val)==='object'){
         if(real_index>=0){
             var val = tmp_val.eq(real_index);
