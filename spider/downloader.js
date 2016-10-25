@@ -154,6 +154,8 @@ downloader.prototype.downloadItAct = function(urlinfo){
 //        var __path = pageLink;
     }
 
+    //sss added 1025 解决url中有非英文字符的问题。如果不处理，是404
+    __path = encodeURI(__path);
 
     if (!urlinfo['referer'] || urlinfo['referer'].trim().length == 0){
 	var port = __port?__port:'';
